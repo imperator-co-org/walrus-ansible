@@ -62,15 +62,16 @@ In part **1.**, we create keys. You now need to move them to the host as follows
 .walrus_testnet-node_1/volumes/config/publisher
 ```
 
-## **Customization**
+## **How to Upgrade**
 
-### **Modify Configuration**
-You can edit the configuration files inside:
+### **Update the binary url/version**
+
+You can edit the binary url/version value inside:
 
 - `chains/chains_testnet/walrus.yaml` for testnet
 - `chains/chains_mainnet/walrus.yaml` for mainnet
 
-For example, modify `walrus`:
+For example, with the new `binary_version` and run again the ansible command from step `**2. Run the Ansible Playbook**`:
 
 ```yaml
 # Storage node binary and version
@@ -81,7 +82,19 @@ node:
 aggregator_publisher:
     binary_url: https://xxxxxxxxx
     binary_version: v1.12.0-56e2fd6-ubuntu-x86_64
+```
 
+## **Customization**
+
+### **Modify Configuration**
+You can edit the configuration values inside:
+
+- `chains/chains_testnet/walrus.yaml` for testnet
+- `chains/chains_mainnet/walrus.yaml` for mainnet
+
+For example, modify `walrus`:
+
+```yaml
 # Client name
 imperator:
     # node number
