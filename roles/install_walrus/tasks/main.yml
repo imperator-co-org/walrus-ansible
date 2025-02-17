@@ -1,0 +1,125 @@
+---
+
+- name: Define node number walrus
+  set_fact:
+    node_number: "{{ 'node_' + number }}"
+
+- name: Check if client walrus is defined
+  assert:
+    that:
+      - lookup('vars', client)[node_number]['host'] == target
+    fail_msg: >
+      "{{ client }}.node_number.host is not defined or/and matching input host=target in the chains_{{ env_node }}/walrus.yaml file. (example: imperator, etc...)"
+
+- name: Install nginx package
+  become: true
+  apt:
+    name: nginx
+    state: present
+    update_cache: yes
+
+- name: Allow required UFW ports
+  become: true
+  ansible.builtin.shell:
+    cmd: |
+      sudo ufw allow {{ lookup('vars', client)[node_number]['port_storage'] }} comment 'walrus_port_storage'
+  ignore_errors: true
+
+- name: Create under directory for docker volume
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0644'
+  with_items:
+    - /{{ ansible_user }}/.walrus_{{ env_node }}-{{ node_number }}
+    - /{{ ansible_user }}/.walrus_{{ env_node }}-{{ node_number }}/volumes
+    - /{{ ansible_user }}/.walrus_{{ env_node }}-{{ node_number }}/volumes/config
+    - /{{ ansible_user }}/.walrus_{{ env_node }}-{{ node_number }}/volumes/config/publisher
+    - /{{ ansible_user }}/.walrus_{{ env_node }}-{{ node_number }}/volumes/db
+    - /{{ ansible_user }}/.walrus_{{ env_node }}-{{ node_number }}/volumes/wallets
+
+- name: Copy docker-compose.yml to host 
+  become: true
+  template:
+    src: 'docker-compose.yml'
+    dest: '/{{ ansible_user }}/.walrus_{{ env_node }}-{{ node_number }}'
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+    mode: '0644'
+
+- name: Copy Dockerfile in directory
+  become: true
+  template:
+    src: 'Dockerfile'
+    dest: '/{{ ansible_user }}/.walrus_{{ env_node }}-{{ node_number }}'
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+    mode: '0644'
+
+- name: Copy walrus node yaml to host
+  become: true
+  template:
+    src: "{{ env_node }}-walrus-node.yaml"
+    dest: /{{ ansible_user }}/.walrus_{{ env_node }}-{{ node_number }}/volumes/config/walrus-node.yaml
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+    mode: '0644'
+
+- name: Copy sui node yaml to host
+  become: true
+  template:
+    src: "{{ env_node }}-sui_config.yaml"
+    dest: /{{ ansible_user }}/.walrus_{{ env_node }}-{{ node_number }}/volumes/config/sui_config.yaml
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+    mode: '0644'
+
+- name: Copy client_config publisher_aggregator yaml to host
+  become: true
+  template:
+    src: "{{ env_node }}-client_config.yaml"
+    dest: /{{ ansible_user }}/.walrus_{{ env_node }}-{{ node_number }}/volumes/config/client_config.yaml
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+    mode: '0644'
+
+- name: Copy sui_client publisher_aggregator yaml to host
+  become: true
+  template:
+    src: "{{ env_node }}-sui_client.yaml"
+    dest: /{{ ansible_user }}/.walrus_{{ env_node }}-{{ node_number }}/volumes/config/publisher/sui_client.yaml
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+    mode: '0644'
+
+- name: Copy dns_aggregator nginx to host
+  become: true
+  template:
+    src: "dns_aggregator"
+    dest: /etc/nginx/sites-enabled/{{ lookup('vars', client)[node_number]['dns_aggregator'] }}
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+    mode: '0644'
+
+- name: Copy dns_publisher nginx to host
+  become: true
+  template:
+    src: "dns_publisher"
+    dest: /etc/nginx/sites-enabled/{{ lookup('vars', client)[node_number]['dns_publisher'] }}
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+    mode: '0644'
+
+- name: Reloaded nginx service
+  become: true
+  systemd:
+    name: nginx
+    state: reloaded
+    daemon_reload: yes
+    enabled: yes
+
+- name: Launch docker compose up recreate
+  shell:
+    cmd: docker compose up -d --build --force-recreate --remove-orphans
+    chdir: '/{{ ansible_user }}/.walrus_{{ env_node }}-{{ node_number }}'
+  ignore_errors: true

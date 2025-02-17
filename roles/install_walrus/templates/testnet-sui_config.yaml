@@ -1,0 +1,10 @@
+---
+keystore:
+  File: "/root/.walrus_{{ env_node }}-{{ node_number }}/config/sui.keystore"
+envs:
+  - alias: testnet
+    rpc: "https://fullnode.testnet.sui.io:443"
+    ws: ~
+    basic_auth: ~
+active_env: testnet
+active_address: "{{ lookup('vars', client)[node_number]['wallet_storage'] }}"

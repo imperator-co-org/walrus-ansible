@@ -1,0 +1,92 @@
+services:
+  walrus_storage_{{ env_node }}_{{ number }}:
+    container_name: walrus_storage_{{ env_node }}_{{ number }}
+    image: walrus-node:{{ node.binary_version }}
+    ulimits:
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BINARY_VERSION: {{ node.binary_version }}    
+        BINARY_URL: {{ node.binary_url }}
+    environment:
+      WALRUS_DIR: /{{ ansible_user }}/.walrus_{{ env_node }}-{{ node_number }}
+    command: >
+      walrus-node
+      run
+      --config-path=/{{ ansible_user }}/.walrus_{{ env_node }}-{{ node_number }}/config/walrus-node.yaml
+    ports:
+      - "{{ lookup('vars', client)[node_number]['port_storage'] }}:{{ lookup('vars', client)[node_number]['port_storage'] }}"
+      - "{{ lookup('vars', client)[node_number]['port_storage_metrics'] }}:{{ lookup('vars', client)[node_number]['port_storage_metrics'] }}"
+    volumes:
+      - walrus_{{ env_node }}-{{ node_number }}-volume:/{{ ansible_user }}/.walrus_{{ env_node }}-{{ node_number }}
+    restart: unless-stopped
+
+  walrus_aggregator_{{ env_node }}_{{ number }}:
+    container_name: walrus_aggregator_{{ env_node }}_{{ number }}
+    image: walrus-node:{{ aggregator_publisher.binary_version }}
+    ulimits:
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BINARY_VERSION: {{ aggregator_publisher.binary_version }}    
+        BINARY_URL: {{ aggregator_publisher.binary_url }}
+    environment:
+      WALRUS_DIR: /{{ ansible_user }}/.walrus_{{ env_node }}-{{ node_number }}
+    command: >
+      walrus
+      --config=/{{ ansible_user }}/.walrus_{{ env_node }}-{{ node_number }}/config/client_config.yaml
+      aggregator
+      --bind-address=0.0.0.0:{{ lookup('vars', client)[node_number]['port_aggregator'] }}
+      --metrics-address=0.0.0.0:{{ lookup('vars', client)[node_number]['port_aggregator_metrics'] }}
+    ports:
+      - "{{ lookup('vars', client)[node_number]['port_aggregator'] }}:{{ lookup('vars', client)[node_number]['port_aggregator'] }}"
+      - "{{ lookup('vars', client)[node_number]['port_aggregator_metrics'] }}:{{ lookup('vars', client)[node_number]['port_aggregator_metrics'] }}"
+    volumes:
+      - walrus_{{ env_node }}-{{ node_number }}-volume:/{{ ansible_user }}/.walrus_{{ env_node }}-{{ node_number }}
+    restart: unless-stopped
+
+  walrus_publisher_{{ env_node }}_{{ number }}:
+      container_name: walrus_publisher_{{ env_node }}_{{ number }}
+      image: walrus-node:{{ aggregator_publisher.binary_version }}
+      ulimits:
+        nofile:
+          soft: 1048576
+          hard: 1048576
+      build: 
+        context: .
+        dockerfile: Dockerfile
+        args:
+          BINARY_VERSION: {{ aggregator_publisher.binary_version }}    
+          BINARY_URL: {{ aggregator_publisher.binary_url }}
+      environment:
+        WALRUS_DIR: /{{ ansible_user }}/.walrus_{{ env_node }}-{{ node_number }}
+      command: >
+        walrus
+        --config=/{{ ansible_user }}/.walrus_{{ env_node }}-{{ node_number }}/config/client_config.yaml
+        publisher
+        --bind-address=0.0.0.0:{{ lookup('vars', client)[node_number]['port_publisher'] }}
+        --metrics-address=0.0.0.0:{{ lookup('vars', client)[node_number]['port_publisher_metrics'] }}
+        --sub-wallets-dir=/{{ ansible_user }}/.walrus_{{ env_node }}-{{ node_number }}/wallets
+      ports:
+        - "{{ lookup('vars', client)[node_number]['port_publisher'] }}:{{ lookup('vars', client)[node_number]['port_publisher'] }}"
+        - "{{ lookup('vars', client)[node_number]['port_publisher_metrics'] }}:{{ lookup('vars', client)[node_number]['port_publisher_metrics'] }}"
+      volumes:
+        - walrus_{{ env_node }}-{{ node_number }}-volume:/{{ ansible_user }}/.walrus_{{ env_node }}-{{ node_number }}
+      restart: unless-stopped
+
+volumes:
+  walrus_{{ env_node }}-{{ node_number }}-volume:
+    driver: local
+    driver_opts:
+      type: none
+      device: /{{ ansible_user }}/.walrus_{{ env_node }}-{{ node_number }}/volumes
+      o: bind
+      

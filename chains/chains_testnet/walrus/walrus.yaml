@@ -1,0 +1,27 @@
+# [Tech]
+
+# General info
+node:
+  binary_url: https://xxxxxxxxx
+  binary_version: v1.12.0-56e2fd6-ubuntu-x86_64
+aggregator_publisher:
+  binary_url: https://xxxxxxxxx
+  binary_version: v1.12.0-56e2fd6-ubuntu-x86_64
+
+# Client info
+imperator:
+  node_1:
+    host: walrus-testnet
+    dns_storage: xxxxxxxxxx.imperator.co
+    dns_aggregator: xxxxxxxxxx.imperator.co
+    dns_publisher: xxxxxxxxxx.imperator.co
+    wallet_storage: "0xxxxxxxxxxx"
+    wallet_publisher: "0xxxxxxxxxxx"
+    node_name: Imperator.co
+    node_capacity: 53000000000000
+    port_storage: 9185
+    port_storage_metrics: 9184
+    port_aggregator: 9000
+    port_aggregator_metrics: 9020
+    port_publisher: 9001
+    port_publisher_metrics: 9010
